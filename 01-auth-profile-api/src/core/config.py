@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     # Reads DATABASE_URL from environment or .env file
     DATABASE_URL: str
 
+    # JWT settings (used for authentication)
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
     #tell pydantic to also load a local ".env" file if present (dev-friendly)
     model_config = SettingsConfigDict(env_file = ".env", env_file_encodings="utf-8")
 
