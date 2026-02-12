@@ -13,10 +13,47 @@ Why:
 import uuid
 from datetime import datetime
 from sqlalchemy import String, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID 
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base
+
+
+class GUID(TypeDecorator):
+    """
+    Platform-independent GUID type.
+    
+    Why:
+    - PostgreSQL has native UUID support.
+    - SQLite doesn't, so we store as CHAR(36).
+    - This makes tests work with SQLite and production with PostgreSQL.
+    """
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(UUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return value
+        else:
+            if isinstance(value, uuid.UUID):
+                return str(value)
+            return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value
+        return uuid.UUID(value)
 
 
 class User(Base):
@@ -28,8 +65,9 @@ class User(Base):
     # Primary Key:
     # - We use UUID so IDs are hard to guess (nice for security).
     # - default=uuid.uuid4 creates a new UUID automatically.
+    # - GUID type works with both PostgreSQL and SQLite.
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -56,6 +94,13 @@ class User(Base):
     name: Mapped[str] = mapped_column(
         String(120),
         nullable=False,
+    )
+
+    # Bio (optional):
+    # - user's short description about themselves.
+    bio: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
     )
 
     # Timestamps:

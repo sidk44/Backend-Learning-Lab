@@ -8,7 +8,7 @@ Why:
 
 from sqlalchemy.orm import Session
 
-from src.core.security import hash_password
+from src.core.security import hash_password, verify_password
 from src.core.tokens import create_access_token
 from src.repositories.user_repo import get_user_by_email, create_user
 
@@ -16,6 +16,16 @@ from src.repositories.user_repo import get_user_by_email, create_user
 class EmailAlreadyExists(Exception):
     """
     Custom error so route can return 409 Conflict neatly.
+    """
+    pass
+
+
+class InvalidCredentials(Exception):
+    """
+    Custom error for wrong email or password.
+    
+    Why:
+    - Route can return 401 Unauthorized with a clean message.
     """
     pass
 
@@ -40,4 +50,30 @@ def register_user(db: Session, *, email: str, password: str, name: str):
 
     token = create_access_token(str(user.id))
 
+    return token, user
+
+
+def login_user(db: Session, *, email: str, password: str):
+    """
+    Login an existing user.
+    
+    Flow:
+    1) Find user by email
+    2) Verify password against stored hash
+    3) Create access token
+    4) Return (token, user)
+    
+    Security:
+    - We don't tell which is wrong (email vs password) to avoid user enumeration.
+    - Just say "invalid credentials".
+    """
+    user = get_user_by_email(db, email)
+    if not user:
+        raise InvalidCredentials()
+    
+    if not verify_password(password, user.password_hash):
+        raise InvalidCredentials()
+    
+    token = create_access_token(str(user.id))
+    
     return token, user

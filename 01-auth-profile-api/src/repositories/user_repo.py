@@ -6,6 +6,7 @@ Why:
 - Makes service layer simple and readable.
 """
 
+import uuid
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -39,4 +40,33 @@ def create_user(db: Session, *, email: str, password_hash: str, name: str) -> Us
     db.commit()
     db.refresh(user)  # now user.id, created_at etc are available
 
+    return user
+
+
+
+def get_user_by_id(db: Session, user_id: str | uuid.UUID) -> User | None:
+    """
+    Find a user by ID.
+    
+    Why:
+    - Protected routes need to load the current user after verifying JWT.
+    - We get user_id from the token, then load full user details.
+    """
+    if isinstance(user_id, str):
+        user_id = uuid.UUID(user_id)
+    
+    stmt = select(User).where(User.id == user_id)
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def update_user(db: Session, user: User) -> User:
+    """
+    Update an existing user.
+    
+    Why:
+    - Centralize the commit + refresh logic.
+    - Service layer just modifies fields, then calls this.
+    """
+    db.commit()
+    db.refresh(user)
     return user

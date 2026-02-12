@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
-from src.schemas.user import RegisterRequest, RegisterResponse, UserPublic
-from src.services.auth_service import register_user, EmailAlreadyExists
+from src.schemas.user import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, user_to_public
+from src.services.auth_service import register_user, login_user, EmailAlreadyExists, InvalidCredentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -34,11 +34,30 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
     return RegisterResponse(
         access_token=token,
-        user=UserPublic(
-            id=user.id,
-            email=user.email,
-            name=user.name,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        ),
+        user=user_to_public(user),
+    )
+
+
+@router.post("/login", response_model=LoginResponse)
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Login endpoint.
+    
+    What happens:
+    - Verify email + password
+    - Return JWT token + user info
+    
+    Security:
+    - 401 Unauthorized if credentials are wrong
+    - Don't reveal whether email or password is incorrect
+    """
+    try:
+        token, user = login_user(db, email=payload.email, password=payload.password)
+    except InvalidCredentials:
+        # 401 Unauthorized = authentication failed
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    return LoginResponse(
+        access_token=token,
+        user=user_to_public(user),
     )

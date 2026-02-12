@@ -12,6 +12,7 @@ from sqlalchemy import text
 
 from src.db.session import init_db,get_db
 from src.routes.auth import router as auth_router
+from src.routes.profile import router as profile_router
 
 # IMPORTANT:
 # We must import models so SQLAlchemy "registers" them with Base.metadata.
@@ -35,6 +36,7 @@ def on_startup():
     init_db()
 
 
+app.include_router(profile_router)
 app.include_router(auth_router)
 
 @app.get("/health")

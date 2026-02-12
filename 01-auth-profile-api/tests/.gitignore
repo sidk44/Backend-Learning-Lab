@@ -1,0 +1,5 @@
+# Test database (SQLite for tests)
+test.db
+__pycache__
+*.pyc
+.pytest_cache

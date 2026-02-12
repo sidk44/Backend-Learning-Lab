@@ -13,6 +13,24 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 
+def user_to_public(user) -> "UserPublic":
+    """
+    Helper to convert SQLAlchemy User model to UserPublic schema.
+    
+    Why:
+    - Avoids repeating the same mapping code everywhere.
+    - One place to maintain if we add/remove fields.
+    """
+    return UserPublic(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        bio=user.bio,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
+
+
 class UserPublic(BaseModel):
     """
     What we send back to the client about a user.
@@ -24,6 +42,7 @@ class UserPublic(BaseModel):
     id: UUID
     email: EmailStr
     name: str
+    bio: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -54,3 +73,43 @@ class RegisterResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserPublic
+
+
+class LoginRequest(BaseModel):
+    """
+    What client sends to login.
+    
+    Simple:
+    - email + password only
+    """
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """
+    What we return after successful login.
+    
+    Same as register response:
+    - token for authorization
+    - user info
+    """
+    access_token: str
+    token_type: str = "bearer"
+    user: UserPublic
+
+
+class UpdateProfileRequest(BaseModel):
+    """
+    What client can send to update profile.
+    
+    Why all optional:
+    - User can update just name, or just bio, or both.
+    - PATCH is for partial updates.
+    
+    Security:
+    - We don't allow updating email, password, or id here.
+    - Those require separate secure flows.
+    """
+    name: str | None = Field(None, min_length=2, max_length=120)
+    bio: str | None = Field(None, max_length=500)
