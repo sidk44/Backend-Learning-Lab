@@ -1,130 +1,79 @@
 # Auth + Profile API
 
-A production-ready **FastAPI** authentication and profile management API with **PostgreSQL**, **SQLAlchemy**, and **JWT** authentication.
-
-## Features
-
-✅ **User Registration** (`POST /auth/register`)  
-✅ **User Login** (`POST /auth/login`)  
-✅ **JWT Token Authentication**  
-✅ **Protected Profile Endpoints**:
-  - `GET /me` - Get current user profile
-  - `PATCH /me` - Update name and bio  
-✅ **Secure Password Hashing** (bcrypt_sha256)  
-✅ **Clean Architecture** (routes → services → repositories)  
-✅ **Comprehensive Tests** (pytest with 100% endpoint coverage)  
-✅ **Input Validation** (Pydantic schemas)  
-✅ **Proper HTTP Status Codes** (401, 409, 422, etc.)
+A beginner-friendly **FastAPI** backend demonstrating:
+- User registration & login with **JWT authentication**
+- Protected profile endpoints (GET/PATCH `/me`)
+- PostgreSQL database with **SQLAlchemy ORM**
+- Clean architecture (routes → services → repositories)
+- Comprehensive **pytest** test suite
 
 ---
 
-## Project Structure
+## 🚀 Quick Start
 
-```
-01-auth-profile-api/
-├── src/
-│   ├── main.py              # FastAPI app entry point
-│   ├── core/
-│   │   ├── config.py        # Settings (env vars)
-│   │   ├── security.py      # Password hashing
-│   │   ├── tokens.py        # JWT creation/verification
-│   │   └── deps.py          # Authentication dependency
-│   ├── db/
-│   │   ├── base.py          # SQLAlchemy Base
-│   │   └── session.py       # Database session
-│   ├── models/
-│   │   └── user.py          # User SQLAlchemy model
-│   ├── repositories/
-│   │   └── user_repo.py     # Database queries
-│   ├── routes/
-│   │   ├── auth.py          # Register & login endpoints
-│   │   └── profile.py       # Profile endpoints
-│   ├── schemas/
-│   │   └── user.py          # Pydantic schemas
-│   └── services/
-│       ├── auth_service.py  # Auth business logic
-│       └── profile_service.py # Profile business logic
-├── tests/
-│   ├── conftest.py          # Pytest fixtures
-│   ├── test_auth.py         # Auth endpoint tests
-│   └── test_profile.py      # Profile endpoint tests
-├── requirements.txt
-├── pytest.ini
-└── README.md
-```
+### Prerequisites
+- Python 3.10+
+- PostgreSQL running locally
+- Virtual environment recommended
 
----
-
-## Setup Instructions
-
-### 1. Prerequisites
-
-- **Python 3.12+**
-- **PostgreSQL** (running locally or remote)
-
-### 2. Install Dependencies
+### 1. Setup
 
 ```bash
+# Navigate to project directory
 cd 01-auth-profile-api
+
+# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment
 
-Create a `.env` file:
+Create `.env` file in the project root:
 
-```bash
-# Database
+```env
 DATABASE_URL=postgresql://user:password@localhost:5432/auth_db
-
-# JWT
-JWT_SECRET=your-super-secret-key-change-this-in-production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+SECRET_KEY=your-secret-key-min-32-chars-long
 ```
 
-**Security Note:** Generate a strong `JWT_SECRET`:
+**Generate a secure SECRET_KEY:**
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### 4. Run the Server
+### 3. Initialize Database
+
+```bash
+# Reset/create tables (clears existing data!)
+python reset_db.py
+```
+
+### 4. Run Server
 
 ```bash
 uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Server will start at: **http://localhost:8000**
-
-Interactive API docs: **http://localhost:8000/docs**
-
----
-
-## API Endpoints
-
-### Health Check
-
-#### `GET /health`
-Simple health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok"
-}
-```
+API will be available at:
+- **API:** http://localhost:8000
+- **Interactive docs:** http://localhost:8000/docs
+- **Alternative docs:** http://localhost:8000/redoc
 
 ---
 
-### Authentication
+## 📡 API Endpoints
 
-#### `POST /auth/register`
-Register a new user.
+### **Authentication**
 
-**Request:**
-```json
+#### Register New User
+```http
+POST /auth/register
+Content-Type: application/json
+
 {
   "email": "user@example.com",
   "password": "securepass123",
@@ -132,344 +81,223 @@ Register a new user.
 }
 ```
 
-**Response (201 Created):**
+**Response (201):**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
     "name": "John Doe",
     "bio": null,
-    "created_at": "2026-02-12T08:00:00Z",
-    "updated_at": "2026-02-12T08:00:00Z"
+    "created_at": "2026-02-12T08:00:00"
   }
 }
 ```
 
-**Error Responses:**
-- `409 Conflict` - Email already registered
-- `422 Unprocessable Entity` - Invalid email format or password too short
+#### Login
+```http
+POST /auth/login
+Content-Type: application/json
 
----
-
-#### `POST /auth/login`
-Login with existing credentials.
-
-**Request:**
-```json
 {
   "email": "user@example.com",
   "password": "securepass123"
 }
 ```
 
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
     "name": "John Doe",
     "bio": null,
-    "created_at": "2026-02-12T08:00:00Z",
-    "updated_at": "2026-02-12T08:00:00Z"
+    "created_at": "2026-02-12T08:00:00"
   }
 }
 ```
 
-**Error Response:**
-- `401 Unauthorized` - Invalid email or password
+### **Profile (Protected)**
 
----
+All profile endpoints require `Authorization: Bearer <token>` header.
 
-### Profile (Protected Routes)
-
-**All profile endpoints require authentication:**
-```
-Authorization: Bearer <access_token>
+#### Get Current User Profile
+```http
+GET /me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-#### `GET /me`
-Get current user's profile.
-
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
   "name": "John Doe",
   "bio": "Software developer",
-  "created_at": "2026-02-12T08:00:00Z",
-  "updated_at": "2026-02-12T08:00:00Z"
+  "created_at": "2026-02-12T08:00:00"
 }
 ```
 
-**Error Responses:**
-- `401 Unauthorized` - Missing or invalid token
-- `403 Forbidden` - No Authorization header
+#### Update Profile
+```http
+PATCH /me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
 
----
-
-#### `PATCH /me`
-Update profile (name and/or bio).
-
-**Request (partial update):**
-```json
 {
-  "name": "Jane Smith",
-  "bio": "Full-stack developer passionate about APIs"
+  "name": "Jane Doe",
+  "bio": "Full-stack developer"
 }
 ```
 
-You can update only one field:
-```json
-{
-  "bio": "Updated bio only"
-}
-```
-
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
-  "name": "Jane Smith",
-  "bio": "Full-stack developer passionate about APIs",
-  "created_at": "2026-02-12T08:00:00Z",
-  "updated_at": "2026-02-12T08:05:30Z"
+  "name": "Jane Doe",
+  "bio": "Full-stack developer",
+  "created_at": "2026-02-12T08:00:00"
 }
 ```
 
-**Validation Rules:**
-- `name`: 2-120 characters
-- `bio`: max 500 characters
-
-**Error Responses:**
-- `401 Unauthorized` - Missing or invalid token
-- `422 Unprocessable Entity` - Validation error
-
-**Security:** You cannot update `email`, `password`, `id`, or timestamps via this endpoint.
+**Notes:**
+- Both fields are optional (partial updates)
+- `email`, `password_hash`, `id` cannot be updated via this endpoint
+- Returns 403 if attempting to modify protected fields
 
 ---
 
-## Running Tests
-
-### Run All Tests
+## 🧪 Testing
 
 ```bash
-pytest
-```
-
-### Run with Coverage
-
-```bash
-pytest --cov=src --cov-report=term-missing
-```
-
-### Run Specific Test File
-
-```bash
-pytest tests/test_auth.py
-pytest tests/test_profile.py
-```
-
-### Run Verbose
-
-```bash
+# Run all tests
 pytest -v
+
+# Run specific test file
+pytest tests/test_auth.py -v
+
+# Run with coverage
+pytest --cov=src --cov-report=html
 ```
 
-### Test Coverage
-
-The test suite covers:
-- ✅ User registration (success, duplicate email, validation)
-- ✅ User login (success, wrong credentials)
-- ✅ Get profile (authenticated, no token, invalid token)
-- ✅ Update profile (name, bio, both, validation)
-- ✅ Authorization checks on protected endpoints
+**Test Coverage:**
+- ✅ User registration (validation, duplicates)
+- ✅ Login (success, wrong password, missing user)
+- ✅ Profile retrieval (authenticated/unauthenticated)
+- ✅ Profile updates (partial, immutable fields)
+- ✅ JWT token validation
+- ✅ Error handling (401, 403, 409, 422)
 
 ---
 
-## Database Management
+## 📂 Project Structure
 
-### Create Database
-
-```bash
-# Connect to PostgreSQL
-psql -U postgres
-
-# Create database
-CREATE DATABASE auth_db;
 ```
+01-auth-profile-api/
+├── src/
+│   ├── core/           # Core utilities
+│   │   ├── config.py   # Environment config
+│   │   ├── deps.py     # FastAPI dependencies (JWT)
+│   │   └── security.py # Password hashing
+│   ├── db/
+│   │   └── session.py  # Database session management
+│   ├── models/
+│   │   └── user.py     # SQLAlchemy User model
+│   ├── repositories/
+│   │   └── user_repo.py # Database operations
+│   ├── routes/
+│   │   ├── auth.py     # /auth/* endpoints
+│   │   └── profile.py  # /me endpoints
+│   ├── schemas/
+│   │   └── user.py     # Pydantic request/response models
+│   ├── services/
+│   │   ├── auth_service.py    # Auth business logic
+│   │   └── profile_service.py # Profile business logic
+│   └── main.py         # FastAPI app entry point
+├── tests/
+│   ├── conftest.py     # Pytest fixtures
+│   ├── test_auth.py    # Auth endpoint tests
+│   └── test_profile.py # Profile endpoint tests
+├── .env                # Environment variables (not in Git)
+├── .gitignore
+├── requirements.txt
+├── reset_db.py         # Database reset utility
+└── README.md
+```
+
+---
+
+## 🔒 Security Features
+
+- **Password Hashing:** bcrypt_sha256 with automatic handling of 72-byte limit
+- **JWT Tokens:** HS256 signing with 60-minute expiry
+- **Protected Routes:** Middleware validates tokens and loads user context
+- **Field Protection:** Email, password_hash, and ID cannot be modified via API
+- **No Sensitive Data Leaks:** Passwords never returned in responses
+
+---
+
+## 🛠️ Development Tips
 
 ### Reset Database
-
-Drop all tables and recreate (useful during development):
-
 ```bash
-# In PostgreSQL
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
+python reset_db.py
 ```
+⚠️ **Warning:** This deletes all data!
 
-Or just restart the server - tables are created automatically via `init_db()` on startup.
+### Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string
+- `SECRET_KEY`: JWT signing key (min 32 chars)
 
----
+### Common Issues
 
-## Development Tips
+**Issue:** `ValueError: password cannot be longer than 72 bytes`
+- **Fix:** Already handled via bcrypt_sha256 + password normalization
 
-### Interactive API Docs
+**Issue:** Database connection fails
+- **Fix:** Check PostgreSQL is running and `.env` has correct credentials
 
-FastAPI auto-generates interactive docs:
-- **Swagger UI:** http://localhost:8000/docs
-- **ReDoc:** http://localhost:8000/redoc
+**Issue:** Tests fail with "table already exists"
+- **Fix:** Tests use isolated SQLite database, ensure `conftest.py` is present
 
-### Test with cURL
+### Testing Protected Endpoints Manually
 
-**Register:**
 ```bash
-curl -X POST http://localhost:8000/auth/register \
+# 1. Register/login to get token
+TOKEN=$(curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test1234","name":"Test User"}'
-```
+  -d '{"email":"test@example.com","password":"pass123"}' \
+  | jq -r '.token')
 
-**Login:**
-```bash
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test1234"}'
-```
-
-**Get Profile:**
-```bash
-# Replace <TOKEN> with actual token from login response
+# 2. Use token in requests
 curl -X GET http://localhost:8000/me \
-  -H "Authorization: Bearer <TOKEN>"
+  -H "Authorization: Bearer $TOKEN"
 ```
-
-**Update Profile:**
-```bash
-curl -X PATCH http://localhost:8000/me \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Updated Name","bio":"New bio"}'
-```
-
-### Check Logs
-
-The server logs all requests and errors to the console. Watch for:
-- SQL queries (if `echo=True` in `create_engine`)
-- Authentication failures
-- Validation errors
 
 ---
 
-## Security Best Practices Implemented
+## 📚 Learning Resources
 
-✅ **Passwords Never Stored in Plain Text** - bcrypt_sha256 hashing  
-✅ **JWT Expiry** - Tokens expire after 60 minutes (configurable)  
-✅ **No Password in Responses** - UserPublic schema excludes password_hash  
-✅ **Protected Fields** - Cannot update email/password via PATCH /me  
-✅ **User Enumeration Prevention** - Same error message for wrong email/password  
-✅ **Input Validation** - Pydantic schemas validate all inputs  
-✅ **Prepared Statements** - SQLAlchemy prevents SQL injection  
-✅ **HTTPS Recommended** - Use reverse proxy (Nginx) with SSL in production
+This project demonstrates:
+- **FastAPI:** Modern async Python web framework
+- **SQLAlchemy:** ORM for database operations
+- **Pydantic:** Request/response validation
+- **JWT:** Stateless authentication
+- **Pytest:** Test-driven development
+- **Clean Architecture:** Separation of concerns
 
----
-
-## Common Issues & Solutions
-
-### Issue: Database Connection Error
-
-**Error:** `sqlalchemy.exc.OperationalError: connection to server failed`
-
-**Solution:**
-1. Check PostgreSQL is running: `systemctl status postgresql`
-2. Verify `DATABASE_URL` in `.env`
-3. Test connection: `psql -U user -d auth_db`
-
-### Issue: bcrypt 72-byte error
-
-**Error:** `ValueError: password cannot be longer than 72 bytes`
-
-**Solution:** Already fixed! The `_normalize_password()` function handles this.
-
-### Issue: Tests fail with "table already exists"
-
-**Solution:** The test DB is auto-cleaned. If tests still fail:
-```bash
-rm test.db  # Remove test database file
-pytest      # Run again
-```
-
-### Issue: Token expired/invalid
-
-**Error:** `401 Unauthorized: Invalid or expired token`
-
-**Solution:** 
-1. Login again to get a new token
-2. Check token expiry time in config (default 60 minutes)
-3. Ensure you're passing: `Authorization: Bearer <token>`
+### Next Steps
+- Add email verification
+- Implement refresh tokens
+- Add rate limiting
+- Deploy to cloud (Railway, Render, etc.)
+- Add password reset flow
+- Implement role-based access control (RBAC)
 
 ---
 
-## Next Steps / Enhancements
 
-Possible extensions to this project:
-
-- [ ] **Email Verification** - Send verification link after registration
-- [ ] **Password Reset** - Forgot password flow
-- [ ] **Refresh Tokens** - Long-lived refresh tokens + short-lived access tokens
-- [ ] **Email Update** - Secure flow to change email with verification
-- [ ] **Rate Limiting** - Prevent brute force attacks
-- [ ] **User Roles** - Admin vs regular user permissions
-- [ ] **Profile Pictures** - File upload + storage
-- [ ] **Account Deletion** - Soft delete with confirmation
-- [ ] **OAuth Integration** - Login with Google/GitHub
-- [ ] **Audit Logging** - Track all user actions
-
----
-
-## Architecture Highlights
-
-### Clean Separation of Concerns
-
-```
-Routes (HTTP layer)
-    ↓
-Services (Business logic)
-    ↓
-Repositories (Database operations)
-    ↓
-Database
-```
-
-**Why this matters:**
-- ✅ Easy to test each layer independently
-- ✅ Changes to DB don't affect business rules
-- ✅ Can swap implementations (e.g., SQLite → PostgreSQL)
-
-### Dependency Injection
-
-FastAPI's `Depends()` makes code testable:
-- Routes don't import database directly
-- Tests can override dependencies (use test DB)
-- Easy to mock for unit tests
-
-### Error Handling
-
-Custom exceptions (`EmailAlreadyExists`, `InvalidCredentials`) map to proper HTTP status codes without exposing internals.
-
----
-
-## License
-
-MIT
-
-## Author
-
-Built as part of the Backend Learning Lab project series.
